@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
     }
     
     uint64_t connections = cfg.connections / cfg.threads;
-    uint64_t throughput = cfg.rate / cfg.threads;
+    double throughput = (double)cfg.rate / cfg.threads;
     uint64_t stop_at     = time_us() + (cfg.duration * 1000000);
 
     for (uint64_t i = 0; i < cfg.threads; i++) {
@@ -261,6 +261,7 @@ void *thread_main(void *arg) {
     }
 
     double throughput = (thread->throughput / 1000000.0) / thread->connections;
+    double spacing = 1000.0 / thread->throughput; // request spacing in ms
 
     connection *c = thread->cs;
 
@@ -274,7 +275,7 @@ void *thread_main(void *arg) {
         c->complete   = 0;
         c->caught_up  = true;
         // Stagger connects 5 msec apart within thread:
-        aeCreateTimeEvent(loop, i * 5, delayed_initial_connect, c, NULL);
+        aeCreateTimeEvent(loop, (uint64_t)(i * spacing), delayed_initial_connect, c, NULL);
     }
 
     uint64_t calibrate_delay = CALIBRATE_DELAY_MS + (thread->connections * 5);
